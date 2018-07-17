@@ -458,11 +458,19 @@ function paybear_gateway_load()
 
         public function api_domain()
         {
-            if (false) {
+            if ($this->get_option('testnet') == 'yes') {
                 return self::API_DOMAIN_TEST;
             }
 
             return self::API_DOMAIN;
+        }
+
+        function _log ( $log )  {
+            if ( is_array( $log ) || is_object( $log ) ) {
+                error_log( print_r( $log, true ) );
+            } else {
+                error_log( $log );
+            }
         }
 
         /**
@@ -539,7 +547,7 @@ function paybear_gateway_load()
 
             self::$currencies = array();
 
-            $url = $this->api_domain() . sprintf("/v2/currencies?token=%s", $secret);
+            $url = $this->api_domain() . sprintf("/v3/currencies?token=%s", $secret);
             if ($response = wp_remote_fopen($url)) {
                 $response = json_decode($response, true);
                 if (isset($response) && $response['success']) {
@@ -615,6 +623,12 @@ function paybear_gateway_load()
                     'type' => 'text',
                     'description' => __("Lock Fiat to Crypto exchange rate for this long (in minutes, 15 is the recommended minimum)", 'woocommerce'),
                     'default' => '15'
+                ),
+                'testnet' => array(
+                    'title' => __(' Enable Testnet', 'woocommerce'),
+                    'type' => 'checkbox',
+                    'description' => __("Testnet", 'woocommerce'),
+                    'default' => 'no'
                 )
 
             );
@@ -1062,7 +1076,7 @@ This timer is setup to lock in a fixed rate for your payment. Once it expires, r
 
             if (!$cache || !isset($cache->$token)) {
                 $currency = strtolower(get_woocommerce_currency());
-                $url = $this->api_domain() . sprintf("/v2/exchange/%s/rate", $currency);
+                $url = $this->api_domain() . sprintf("/v3/exchange/%s/rate", $currency);
 
                 if ($response = wp_remote_fopen($url)) {
                     $response = json_decode($response);
@@ -1126,7 +1140,7 @@ This timer is setup to lock in a fixed rate for your payment. Once it expires, r
             $callbackUrl = $this->get_ipn_link($order_id);
             //$callbackUrl = 'http://demo.paybear.io/ojosidfjsdf';
 
-            $url = sprintf($this->api_domain() . '/v2/%s/payment/%s?token=%s', $token, urlencode($callbackUrl), $secret);
+            $url = sprintf($this->api_domain() . '/v3/%s/payment/%s?token=%s', $token, urlencode($callbackUrl), $secret);
             self::log("PayBear address request: " . $url);
             if ($contents = wp_remote_fopen($url)) {
                 $response = json_decode($contents);
