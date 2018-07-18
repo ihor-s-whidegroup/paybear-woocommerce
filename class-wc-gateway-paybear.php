@@ -624,12 +624,20 @@ function paybear_gateway_load()
                     'description' => __("Lock Fiat to Crypto exchange rate for this long (in minutes, 15 is the recommended minimum)", 'woocommerce'),
                     'default' => '15'
                 ),
+                'lock_address_timeout' => array(
+                    'title' => __('Lock Address Timeout', 'woocommerce'),
+                    'type' => 'text',
+                    'description' => __("Time interval in seconds during which the address is locked for this
+invoice only. 86400 seconds by default. Set ‑1 for infinite lock", 'woocommerce'),
+                    'default' => ''
+                ),
                 'testnet' => array(
                     'title' => __(' Enable Testnet', 'woocommerce'),
                     'type' => 'checkbox',
                     'description' => __("Testnet", 'woocommerce'),
                     'default' => 'no'
-                )
+                ),
+
 
             );
 
@@ -974,6 +982,7 @@ This timer is setup to lock in a fixed rate for your payment. Once it expires, r
             $order = wc_get_order($order_id);
             $value = $order->get_total();
             $token = $this->sanitize_token($token);
+            $lock_address_timeout = $this->get_option('lock_address_timeout');
 
             $currencies = array();
 
@@ -992,7 +1001,7 @@ This timer is setup to lock in a fixed rate for your payment. Once it expires, r
                             $paymentsUnconfirmed = $this->get_unconfirmed_payments($order_id, $token);
                             $unconfirmedTotal = array_sum($paymentsUnconfirmed);
 
-                            $address = $this->get_address($code, $order_id, $amount);
+                            $address = $this->get_address($code, $order_id, $amount, $lock_address_timeout);
                             $currency['coinsValue'] = $amount;
                             $currency['coinsPaid'] = $unconfirmedTotal;
                             $currency['rate'] = round($rate, 2);
@@ -1123,7 +1132,7 @@ This timer is setup to lock in a fixed rate for your payment. Once it expires, r
 
         }
 
-        public function get_address($token, $order_id, $total)
+        public function get_address($token, $order_id, $total, $lock_address_timeout = 86400)
         {
             $token = $this->sanitize_token($token);
 
@@ -1140,7 +1149,7 @@ This timer is setup to lock in a fixed rate for your payment. Once it expires, r
             $callbackUrl = $this->get_ipn_link($order_id);
             //$callbackUrl = 'http://demo.paybear.io/ojosidfjsdf';
 
-            $url = sprintf($this->api_domain() . '/v3/%s/payment/%s?token=%s', $token, urlencode($callbackUrl), $secret);
+            $url = sprintf($this->api_domain() . '/v3/%s/payment/%s?token=%s&lock_address_timeout=%s', $token, urlencode($callbackUrl), $secret, $lock_address_timeout);
             self::log("PayBear address request: " . $url);
             if ($contents = wp_remote_fopen($url)) {
                 $response = json_decode($contents);
