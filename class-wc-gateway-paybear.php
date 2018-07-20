@@ -632,7 +632,7 @@ function paybear_gateway_load()
                     'type' => 'text',
                     'description' => __("Time interval in seconds during which the address is locked for this
 invoice only. 86400 seconds by default. Set ‑1 for infinite lock", 'woocommerce'),
-                    'default' => ''
+                    'default' => '86400'
                 ),
                 'testnet' => array(
                     'title' => __(' Enable Testnet', 'woocommerce'),
@@ -1135,9 +1135,10 @@ This timer is setup to lock in a fixed rate for your payment. Once it expires, r
 
         }
 
-        public function get_address($token, $order_id, $total, $lock_address_timeout = 86400)
+        public function get_address($token, $order_id, $total, $lock_address_timeout)
         {
             $token = $this->sanitize_token($token);
+            $lock_address_timeout = (empty($lock_address_timeout)) ? 86400 : $lock_address_timeout;
 
             //return '0xTESTJKADHFJKDHFJKSDFSDF';
 
