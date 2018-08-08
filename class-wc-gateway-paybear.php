@@ -468,14 +468,6 @@ function paybear_gateway_load()
             return self::API_DOMAIN;
         }
 
-        function _log ( $log )  {
-            if ( is_array( $log ) || is_object( $log ) ) {
-                error_log( print_r( $log, true ) );
-            } else {
-                error_log( $log );
-            }
-        }
-
         /**
          * Adds plugin action links
          *
@@ -1071,13 +1063,13 @@ This timer is setup to lock in a fixed rate for your payment. Once it expires, r
         }
 
 
-        public static function log($message)
+        public static function log($log)
         {
-            if (empty(self::$log)) {
-                self::$log = wc_get_logger();
+            if ( is_array( $log ) || is_object( $log ) ) {
+                error_log( print_r( $log, true ) );
+            } else {
+                error_log( $log );
             }
-
-            self::$log->add('woocommerce-gateway-paybear', $message);
         }
 
         function get_exchange_rate($token)
@@ -1154,6 +1146,11 @@ This timer is setup to lock in a fixed rate for your payment. Once it expires, r
             //$callbackUrl = 'http://demo.paybear.io/ojosidfjsdf';
 
             $url = sprintf($this->api_domain() . '/v3/%s/payment/%s?token=%s&lock_address_timeout=%s', $token, urlencode($callbackUrl), $secret, $lock_address_timeout);
+
+            if ($token == 'eth') {
+                $url = sprintf($this->api_domain() . '/v2/%s/payment/%s?token=%s', $token, urlencode($callbackUrl), $secret);
+            }
+
             self::log("PayBear address request: " . $url);
             if ($contents = wp_remote_fopen($url)) {
                 $response = json_decode($contents);
